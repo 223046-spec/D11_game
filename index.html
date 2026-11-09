@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ヤギに餌をあげよう</title>
+    <!-- Tailwind CSS (レスポンシブ・見た目の調整用) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* カスタムアニメーション */
+        @keyframes bounce-short {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+        .animate-bounce-short {
+            animation: bounce-short 0.3s ease-in-out;
+        }
+        .touch-action-none {
+            touch-action: manipulation;
+        }
+    </style>
+</head>
+<body class="bg-amber-50 min-h-screen flex flex-col items-center justify-center p-4 font-sans select-none">
+
+    <!-- ゲーム本体のコンテナ -->
+    <div class="w-full max-w-md bg-white rounded-3xl shadow-xl border-4 border-amber-200 overflow-hidden flex flex-col relative">
+        
+        <!-- ヘッダー：タイトルとスコア・時間表示 -->
+        <header class="bg-amber-100 p-4 border-b-2 border-amber-200 flex justify-between items-center">
+            <div>
+                <h1 class="text-xl font-bold text-amber-900">ヤギに餌をあげよう</h1>
+                <p class="text-xs text-amber-700">好みに合わせて正しくあげよう！</p>
+            </div>
+            <div class="text-right">
+                <div class="text-xs font-bold text-amber-800">残り時間</div>
+                <div class="text-2xl font-black text-amber-600"><span id="time">30</span><span class="text-sm">秒</span></div>
+            </div>
+        </header>
+
+        <!-- メイン表示領域 -->
+        <main class="p-6 flex flex-col items-center justify-between min-h-[340px] bg-gradient-to-b from-amber-50 to-orange-50 relative">
+            
+            <!-- スコア表示 -->
+            <div class="w-full flex justify-between items-center bg-white/80 backdrop-blur px-4 py-2 rounded-full shadow-sm border border-amber-200 mb-2">
+                <span class="font-bold text-amber-900">あげた回数:</span>
+                <span id="score" class="text-3xl font-black text-emerald-600">0</span>
+            </div>
+
+            <!-- ヤギの指示（好みの案内） -->
+            <div class="text-center my-2">
+                <span class="text-xs font-bold text-slate-500 block mb-1">＼ いま食べたいもの ／</span>
+                <div id="preference-badge" class="inline-flex items-center gap-2 px-6 py-2 rounded-full bg-emerald-500 text-white font-extrabold text-xl shadow-md transition-all duration-200">
+                    <span id="pref-icon">🌿</span>
+                    <span id="pref-text">草</span>
+                </div>
+            </div>
+
+            <!-- ヤギのグラフィック（SVG）と吹き出し -->
+            <div class="relative my-4 flex flex-col items-center">
+                <!-- 吹き出し -->
+                <div id="goat-speech" class="absolute -top-10 bg-white border-2 border-amber-400 rounded-xl px-3 py-1 text-sm font-bold text-amber-900 shadow-sm transition-all duration-150">
+                    お腹すいたメ〜！
+                </div>
+                
+                <!-- ヤギのSVGイラスト -->
+                <div id="goat-character" class="w-40 h-40 transition-transform duration-100">
+                    <svg viewBox="0 0 200 200" class="w-full h-full drop-shadow-md">
+                        <!-- 体 -->
+                        <ellipse cx="100" cy="130" rx="60" ry="45" fill="#FDFBF7" stroke="#4A3E3D" stroke-width="4"/>
+                        <!-- 脚 -->
+                        <rect x="65" y="160" width="12" height="30" rx="6" fill="#D1C7BD" stroke="#4A3E3D" stroke-width="4"/>
+                        <rect x="123" y="160" width="12" height="30" rx="6" fill="#D1C7BD" stroke="#4A3E3D" stroke-width="4"/>
+                        <!-- 頭 -->
+                        <path d="M 60 70 Q 100 40 140 70 Q 140 110 100 120 Q 60 110 60 70 Z" fill="#FDFBF7" stroke="#4A3E3D" stroke-width="4"/>
+                        <!-- ツノ -->
+                        <path d="M 75 55 Q 60 20 50 30" fill="none" stroke="#8C7A6B" stroke-width="8" stroke-linecap="round"/>
+                        <path d="M 125 55 Q 140 20 150 30" fill="none" stroke="#8C7A6B" stroke-width="8" stroke-linecap="round"/>
+                        <!-- 耳 -->
+                        <ellipse cx="45" cy="70" rx="18" ry="8" fill="#F5EBE6" stroke="#4A3E3D" stroke-width="3" transform="rotate(-20 45 70)"/>
+                        <ellipse cx="155" cy="70" rx="18" ry="8" fill="#F5EBE6" stroke="#4A3E3D" stroke-width="3" transform="rotate(20 155 70)"/>
+                        <!-- 目 -->
+                        <ellipse cx="80" cy="75" rx="5" ry="7" fill="#4A3E3D"/>
+                        <ellipse cx="120" cy="75" rx="5" ry="7" fill="#4A3E3D"/>
+                        <!-- 口・鼻 -->
+                        <path d="M 95 90 Q 100 95 105 90" fill="none" stroke="#4A3E3D" stroke-width="3" stroke-linecap="round"/>
+                        <!-- あごひげ -->
+                        <path d="M 95 115 Q 100 130 105 115" fill="#FDFBF7" stroke="#4A3E3D" stroke-width="3"/>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- 操作案内テキスト -->
+            <p class="text-xs text-amber-700/80 text-center font-medium">
+                キーボード: <span class="bg-amber-200 px-1.5 py-0.5 rounded font-bold">[1] / [←] 草</span> または <span class="bg-amber-200 px-1.5 py-0.5 rounded font-bold">[2] / [→] 紙</span>
+            </p>
+        </main>
+
+        <!-- ボタン操作エリア（画面下のタップ用ボタン） -->
+        <footer class="p-4 bg-amber-100 border-t-2 border-amber-200 grid grid-cols-2 gap-3">
+            <button id="feed-grass-btn" class="touch-action-none bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white font-bold py-4 px-2 rounded-2xl shadow-lg transform active:scale-95 transition flex flex-col items-center justify-center border-b-4 border-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                <span class="text-2xl mb-1">🌿</span>
+                <span class="text-base">草をあげる</span>
+                <span class="text-[10px] opacity-80">(キーボード: 1 または ←)</span>
+            </button>
+            <button id="feed-paper-btn" class="touch-action-none bg-slate-400 hover:bg-slate-500 active:bg-slate-600 text-white font-bold py-4 px-2 rounded-2xl shadow-lg transform active:scale-95 transition flex flex-col items-center justify-center border-b-4 border-slate-600 disabled:opacity-50 disabled:cursor-not-allowed">
+                <span class="text-2xl mb-1">📄</span>
+                <span class="text-base">紙をあげる</span>
+                <span class="text-[10px] opacity-80">(キーボード: 2 または →)</span>
+            </button>
+        </footer>
+
+        <!-- スタート／結果画面のオーバーレイ -->
+        <div id="overlay" class="absolute inset-0 bg-amber-950/80 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center z-10">
+            <div class="bg-white rounded-3xl p-6 shadow-2xl border-4 border-amber-300 w-full max-w-xs">
+                <h2 id="overlay-title" class="text-2xl font-black text-amber-900 mb-2">ヤギに餌をあげよう</h2>
+                <p id="overlay-desc" class="text-sm text-gray-600 mb-6 leading-relaxed">
+                    ヤギの好みが<b>【草】</b>と<b>【紙】</b>で素早く切り替わります！<br>正しい方のボタンを押して、30秒でたくさん餌をあげよう！
+                </p>
+                
+                <!-- 最終結果表示 -->
+                <div id="final-result" class="hidden mb-6 p-4 bg-amber-50 rounded-2xl border-2 border-amber-200">
+                    <p class="text-xs text-amber-800 font-bold mb-1">結果発表</p>
+                    <p class="text-3xl font-black text-amber-900"><span id="final-score">0</span> <span class="text-base">回成功！</span></p>
+                </div>
+
+                <button id="start-btn" class="w-full bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white font-extrabold py-3 px-6 rounded-xl shadow-md transform active:scale-95 transition border-b-4 border-amber-700 text-lg">
+                    ゲームスタート！
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ゲームロジック (JavaScript) -->
+    <script>
+        // 変数の宣言
+        let score = 0;
+        let timeLeft = 30;
+        let currentPreference = 'grass'; // 'grass' または 'paper'
+        let gameInterval = null;
+        let preferenceTimeout = null;
+        let isPlaying = false;
+
+        // DOM要素の保持用変数
+        let scoreEl, timeEl, prefBadge, prefIcon, prefText;
+        let goatChar, goatSpeech, feedGrassBtn, feedPaperBtn;
+        let overlay, overlayTitle, overlayDesc, finalResult, finalScore, startBtn;
+
+        // --- DOM読み込み完了後に初期化 ---
+        window.addEventListener('DOMContentLoaded', () => {
+            // HTML要素の取得
+            scoreEl = document.getElementById('score');
+            timeEl = document.getElementById('time');
+            prefBadge = document.getElementById('preference-badge');
+            prefIcon = document.getElementById('pref-icon');
+            prefText = document.getElementById('pref-text');
+            goatChar = document.getElementById('goat-character');
+            goatSpeech = document.getElementById('goat-speech');
+            feedGrassBtn = document.getElementById('feed-grass-btn');
+            feedPaperBtn = document.getElementById('feed-paper-btn');
+            overlay = document.getElementById('overlay');
+            overlayTitle = document.getElementById('overlay-title');
+            overlayDesc = document.getElementById('overlay-desc');
+            finalResult = document.getElementById('final-result');
+            finalScore = document.getElementById('final-score');
+            startBtn = document.getElementById('start-btn');
+
+            // イベントリスナーの登録
+            startBtn.addEventListener('click', startGame);
+            feedGrassBtn.addEventListener('click', () => feedGoat('grass'));
+            feedPaperBtn.addEventListener('click', () => feedGoat('paper'));
+
+            // 初期状態でボタン無効化
+            feedGrassBtn.disabled = true;
+            feedPaperBtn.disabled = true;
+        });
+
+        // キーボード操作対応
+        window.addEventListener('keydown', (event) => {
+            if (!isPlaying) return;
+            if (event.key === '1' || event.key === 'ArrowLeft') {
+                feedGoat('grass');
+            } else if (event.key === '2' || event.key === 'ArrowRight') {
+                feedGoat('paper');
+            }
+        });
+
+        // ゲーム開始
+        function startGame() {
+            score = 0;
+            timeLeft = 30;
+            isPlaying = true;
+            
+            scoreEl.textContent = score;
+            timeEl.textContent = timeLeft;
+
+            overlay.classList.add('hidden');
+            feedGrassBtn.disabled = false;
+            feedPaperBtn.disabled = false;
+
+            updatePreference();
+
+            // 1秒ごとのカウントダウンタイマー
+            clearInterval(gameInterval);
+            gameInterval = setInterval(() => {
+                timeLeft--;
+                timeEl.textContent = timeLeft;
+
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+        }
+
+        // 好みの切替（素早く・ランダムな短い間隔）
+        function updatePreference() {
+            if (!isPlaying) return;
+
+            // 草と紙を交互＋ランダムに切替
+            currentPreference = (currentPreference === 'grass') ? 'paper' : 'grass';
+
+            if (currentPreference === 'grass') {
+                prefBadge.className = "inline-flex items-center gap-2 px-6 py-2 rounded-full bg-emerald-500 text-white font-extrabold text-xl shadow-md transition-all duration-200 transform scale-110";
+                prefIcon.textContent = "🌿";
+                prefText.textContent = "草";
+                goatSpeech.textContent = "草が食べたいメ〜！";
+            } else {
+                prefBadge.className = "inline-flex items-center gap-2 px-6 py-2 rounded-full bg-slate-600 text-white font-extrabold text-xl shadow-md transition-all duration-200 transform scale-110";
+                prefIcon.textContent = "📄";
+                prefText.textContent = "紙";
+                goatSpeech.textContent = "今は紙の気分メ〜！";
+            }
+
+            setTimeout(() => {
+                prefBadge.classList.remove('scale-110');
+            }, 150);
+
+            // 切り替わり間隔：0.6秒〜1.4秒の短いペース
+            const nextInterval = Math.floor(Math.random() * 800) + 600;
+
+            clearTimeout(preferenceTimeout);
+            preferenceTimeout = setTimeout(updatePreference, nextInterval);
+        }
+
+        // 餌をあげるアクション
+        function feedGoat(type) {
+            if (!isPlaying) return;
+
+            // アニメーションのリセットと実行
+            goatChar.classList.remove('animate-bounce-short');
+            void goatChar.offsetWidth;
+            goatChar.classList.add('animate-bounce-short');
+
+            if (type === currentPreference) {
+                // 正解
+                score++;
+                scoreEl.textContent = score;
+                goatSpeech.textContent = type === 'grass' ? "ムシャムシャ！(草おいしい)" : "バリバリ！(紙おいしい)";
+            } else {
+                // 不正解
+                goatSpeech.textContent = "これじゃないメ〜！";
+            }
+        }
+
+        // ゲーム終了
+        function endGame() {
+            isPlaying = false;
+            clearInterval(gameInterval);
+            clearTimeout(preferenceTimeout);
+
+            feedGrassBtn.disabled = true;
+            feedPaperBtn.disabled = true;
+
+            // 結果画面の表示
+            overlayTitle.textContent = "タイムアップ！";
+            overlayDesc.textContent = "30秒の挑戦が終了しました！";
+            finalScore.textContent = score;
+            finalResult.classList.remove('hidden');
+            startBtn.textContent = "もう一度遊ぶ";
+            overlay.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
