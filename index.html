@@ -92,6 +92,7 @@
             <!-- 操作案内テキスト -->
             <p class="text-xs text-amber-700/80 text-center font-medium">
                 キーボード: <span class="bg-amber-200 px-1.5 py-0.5 rounded font-bold">[1] / [←] 草</span> または <span class="bg-amber-200 px-1.5 py-0.5 rounded font-bold">[2] / [→] 紙</span>
+                <br>1回押すごとに1回あげられます。長押しでは連続しません。
             </p>
         </main>
 
@@ -178,11 +179,12 @@
         // キーボード操作対応
         window.addEventListener('keydown', (event) => {
             if (!isPlaying) return;
-            if (event.key === '1' || event.key === 'ArrowLeft') {
-                feedGoat('grass');
-            } else if (event.key === '2' || event.key === 'ArrowRight') {
-                feedGoat('paper');
-            }
+            const isGrass = event.key === '1' || event.key === 'ArrowLeft';
+            const isPaper = event.key === '2' || event.key === 'ArrowRight';
+            if (!isGrass && !isPaper) return;
+            event.preventDefault();
+            if (event.repeat) return;
+            feedGoat(isGrass ? 'grass' : 'paper');
         });
 
         // ゲーム開始
